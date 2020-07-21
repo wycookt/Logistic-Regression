@@ -1,1 +1,1 @@
-# Logistic-Regression
+# MIS510-Logistic-Regression
