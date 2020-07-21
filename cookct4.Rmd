@@ -1,0 +1,69 @@
+---
+title: "Module 4 CT Option 1"
+author: "Ty Cook"
+date: "4/11/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read File into Dataframe
+
+```{r}
+banks.df <- read.csv("Banks.csv", header = TRUE) #Read Banks.csv into banks.df dataframe
+```
+## Data Exploration
+
+### Dimension and Header Functions
+```{r}
+dim(banks.df) #Find the Dimensions of the Data Frame Banks
+head(banks.df, n=20) #Show all 20 Rows and Columns from Data Frame
+```
+### Summary
+```{r}
+knitr::kable( summary(banks.df) ) #Table of Summary Statistics for Banks.Csv
+```
+
+### Data Exploration Functions
+```{r}
+data.frame(mean=sapply(banks.df[-c(1:2)],mean,na.rm=TRUE), #Mean excluding Obs and Financial.Condition 
+sd=sapply(banks.df[-c(1:2)],sd,na.rm=TRUE), #Standard Deviation excluding Obs and Financial.Condition 
+min=sapply(banks.df[-c(1:2)],min,na.rm=TRUE), #Minmium excluding Obs and Financial.Condition 
+max=sapply(banks.df[-c(1:2)],max,na.rm=TRUE), #Maxmium excluding Obs and Financial.Condition 
+median=sapply(banks.df[-c(1:2)],median,na.rm=TRUE), #Median excluding Obs and Financial.Condition 
+length=sapply(banks.df[-c(1:2)],length) #Legnth excluding Obs and Financial.Condition 
+)
+```
+
+## Logistic Regression Model
+```{r warning=FALSE}
+banks.df <- banks.df[ , -c(3)] #Exclude 3 TotCap.Asset from Regression Model
+logit.reg <- glm(Financial.Condition ~ ., data = banks.df, family = "binomial") # Create Regression model based on financial Condition
+options(scipen=999) #Options command to prevent Scientfic Notation
+summary(logit.reg) #Summary Statistics for Logistics Regression Model
+```
+## Logistic Regression Equation
+$FC = 68.70 + -11.12(Obs) + 493.00(TotExp.Assets) + -21.84(TotLns.Lses.Assets)$
+
+## Confusion Matrix
+```{r}
+library(gains) # Loading gains library for gains funtion
+library(caret) # Loading caret library for confusionMatrix Function
+pred <- predict(logit.reg, banks.df) # Creating Pred to gather prediction data from logistic regression model
+gain <- gains(banks.df$Financial.Condition, pred, groups=20) #Running gain function from true data and predictiondata
+pred_factor <- ifelse(pred > 1, 1, 0) #creating binary array from prediction results
+pred_factor <- factor(pred_factor, levels = c(0,1), labels = c("S", "W")) #Turning pred_factor into a factor, adding levels, and labels
+true_factor <- factor(banks.df$Financial.Condition, levels = c(0,1), labels = c("S", "W")) #creating true_factor array from financial.condition and turning into a factor, adding levels, and labels
+confusionMatrix(pred_factor, true_factor) #Creating a confusion Matrix
+```
+## Lift Chart
+```{r}
+plot(c(0,gain$cume.pct.of.total*sum(banks.df$Financial.Condition))~ 
+     c(0,gain$cume.obs),
+     xlab="# cases", ylab="Culmulative", main="", type="l") #Plot Function
+lines(c(0,sum(banks.df$Financial.Condition))~c(0, dim(banks.df)[1]), lty=2) #Logistic Regression Line
+```
+
+
